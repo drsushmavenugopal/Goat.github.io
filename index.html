@@ -132,7 +132,7 @@
       .resource-status {
         position: absolute;
         bottom: 18px;
-        left: 18px;
+        left: 120px;
         z-index: 10;
         padding: 8px 10px;
         border-radius: 999px;
@@ -140,6 +140,58 @@
         color: #f4efe4;
         font-size: 12px;
         border: 1px solid rgba(255,255,255,0.16);
+      }
+
+      .joystick-wrap {
+        position: absolute;
+        left: 20px;
+        bottom: 20px;
+        z-index: 10;
+      }
+
+      .joystick {
+        position: relative;
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        background: rgba(8, 13, 20, 0.7);
+        border: 1px solid rgba(255,255,255,0.16);
+        box-shadow: inset 0 0 0 10px rgba(255,255,255,0.04);
+        touch-action: none;
+        cursor: grab;
+      }
+
+      .joystick-knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f8e7c7, #b88b58);
+        transform: translate(-50%, -50%);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      }
+
+      .jump-button {
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        z-index: 10;
+        width: 88px;
+        height: 88px;
+        border: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #7b3dff, #4a24b5);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+        cursor: pointer;
+      }
+
+      .jump-button:active {
+        transform: scale(0.96);
       }
 
       .stars {
@@ -493,6 +545,16 @@
         0%, 100% { transform: translateY(0px) rotate(0deg); }
         50% { transform: translateY(-8px) rotate(1.5deg); }
       }
+
+      .forest.jumping {
+        animation: jumpScene 0.32s ease-out;
+      }
+
+      @keyframes jumpScene {
+        0% { transform: translateY(0px); }
+        40% { transform: translateY(-12px); }
+        100% { transform: translateY(0px); }
+      }
     </style>
   </head>
   <body>
@@ -596,6 +658,12 @@
       </div>
 
       <div class="grass"></div>
+      <div class="joystick-wrap">
+        <div id="joystick" class="joystick">
+          <div id="joystickKnob" class="joystick-knob"></div>
+        </div>
+      </div>
+      <button id="jumpButton" class="jump-button">Jump</button>
       <div id="resourceStatus" class="resource-status">Wood planks: 0</div>
     </div>
     <script>
@@ -605,8 +673,14 @@
       const houseButton = document.getElementById('houseButton');
       const craftStatus = document.getElementById('craftStatus');
       const resourceStatus = document.getElementById('resourceStatus');
+      const joystick = document.getElementById('joystick');
+      const joystickKnob = document.getElementById('joystickKnob');
+      const jumpButton = document.getElementById('jumpButton');
+      const forest = document.querySelector('.forest');
       let ironCount = 0;
       let woodPlanks = 0;
+      let moveX = 0;
+      let moveY = 0;
 
       ironNodes.forEach((iron) => {
         iron.addEventListener('click', () => {
@@ -619,11 +693,20 @@
 
       treeNodes.forEach((tree) => {
         tree.addEventListener('click', () => {
-          woodPlanks += 2;
-          resourceStatus.textContent = `Wood planks: ${woodPlanks}`;
-          houseButton.disabled = woodPlanks < 30;
-          tree.style.opacity = '0';
-          tree.style.pointerEvents = 'none';
+          if (tree.dataset.chopping === 'true') return;
+          tree.dataset.chopping = 'true';
+          tree.style.opacity = '0.7';
+          tree.style.filter = 'saturate(0.7)';
+          resourceStatus.textContent = 'Chopping tree...';
+
+          setTimeout(() => {
+            woodPlanks += 2;
+            resourceStatus.textContent = `Wood planks: ${woodPlanks}`;
+            houseButton.disabled = woodPlanks < 30;
+            tree.style.opacity = '0';
+            tree.style.pointerEvents = 'none';
+            delete tree.dataset.chopping;
+          }, 3000);
         });
       });
 
@@ -633,6 +716,49 @@
           houseButton.textContent = '🏠 House Ready';
           houseButton.disabled = true;
         }
+      });
+
+      const updateJoystick = (clientX, clientY) => {
+        const rect = joystick.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+        const distance = Math.min(26, Math.hypot(dx, dy));
+        const angle = Math.atan2(dy, dx);
+        moveX = Math.cos(angle) * distance;
+        moveY = Math.sin(angle) * distance;
+        joystickKnob.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+        forest.style.transform = `translate(${moveX * 2.2}px, ${moveY * 2.2}px)`;
+      };
+
+      const resetJoystick = () => {
+        moveX = 0;
+        moveY = 0;
+        joystickKnob.style.transform = 'translate(-50%, -50%)';
+        forest.style.transform = 'translate(0px, 0px)';
+      };
+
+      joystick.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        joystick.setPointerCapture(event.pointerId);
+        updateJoystick(event.clientX, event.clientY);
+      });
+
+      joystick.addEventListener('pointermove', (event) => {
+        if (event.buttons === 0) return;
+        updateJoystick(event.clientX, event.clientY);
+      });
+
+      joystick.addEventListener('pointerup', resetJoystick);
+      joystick.addEventListener('pointerleave', resetJoystick);
+      joystick.addEventListener('pointercancel', resetJoystick);
+
+      jumpButton.addEventListener('click', () => {
+        forest.classList.remove('jumping');
+        void forest.offsetWidth;
+        forest.classList.add('jumping');
+        setTimeout(() => forest.classList.remove('jumping'), 320);
       });
 
       craftButton.addEventListener('click', () => {
