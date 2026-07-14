@@ -1,773 +1,427 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Night Forest</title>
-    <style>
-      :root {
-        color-scheme: dark;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        background: radial-gradient(circle at top, #1d2f4d 0%, #060b13 70%, #020306 100%);
-        font-family: Arial, Helvetica, sans-serif;
-      }
-
-      .forest {
-        position: relative;
-        width: min(92vw, 900px);
-        height: min(78vh, 620px);
-        overflow: hidden;
-        border-radius: 28px;
-        box-shadow: 0 20px 55px rgba(0, 0, 0, 0.45);
-        background: linear-gradient(180deg, #0f1a2b 0%, #172b42 45%, #2b4c33 45%, #16261d 100%);
-      }
-
-      .moon {
-        position: absolute;
-        top: 50px;
-        right: 70px;
-        width: 110px;
-        height: 110px;
-        border-radius: 50%;
-        background: radial-gradient(circle, #fdf7bf 0%, #f2d87d 40%, #a88b3d 80%, transparent 81%);
-        box-shadow: 0 0 40px rgba(255, 221, 129, 0.35);
-      }
-
-      .inventory {
-        position: absolute;
-        top: 18px;
-        left: 18px;
-        z-index: 10;
-        background: rgba(8, 13, 20, 0.8);
-        border: 1px solid rgba(255,255,255,0.16);
-        border-radius: 14px;
-        padding: 12px 14px;
-        color: #f4efe4;
-        backdrop-filter: blur(6px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-      }
-
-      .inventory h1 {
-        margin: 0 0 8px;
-        font-size: 16px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin: 6px 0;
-        font-size: 14px;
-      }
-
-      .icon {
-        display: inline-grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        background: rgba(255,255,255,0.12);
-        font-size: 14px;
-      }
-
-      .hint {
-        margin-top: 8px;
-        font-size: 12px;
-        color: #b7c0c8;
-      }
-
-      .craft-panel {
-        position: absolute;
-        top: 18px;
-        right: 18px;
-        z-index: 10;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 8px;
-      }
-
-      .craft-button {
-        border: 0;
-        border-radius: 999px;
-        padding: 10px 14px;
-        background: linear-gradient(135deg, #5d3b1e, #302112);
-        color: #f8e7c7;
-        font-weight: 700;
-        cursor: pointer;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-      }
-
-      .craft-button.house {
-        background: linear-gradient(135deg, #7c5b3d, #4e3523);
-      }
-
-      .craft-button:disabled {
-        cursor: not-allowed;
-        opacity: 0.45;
-        box-shadow: none;
-      }
-
-      .craft-status {
-        padding: 8px 10px;
-        border-radius: 999px;
-        background: rgba(8, 13, 20, 0.8);
-        color: #f4efe4;
-        font-size: 12px;
-        border: 1px solid rgba(255,255,255,0.16);
-      }
-
-      .resource-status {
-        position: absolute;
-        bottom: 18px;
-        left: 120px;
-        z-index: 10;
-        padding: 8px 10px;
-        border-radius: 999px;
-        background: rgba(8, 13, 20, 0.8);
-        color: #f4efe4;
-        font-size: 12px;
-        border: 1px solid rgba(255,255,255,0.16);
-      }
-
-      .joystick-wrap {
-        position: absolute;
-        left: 20px;
-        bottom: 20px;
-        z-index: 10;
-      }
-
-      .joystick {
-        position: relative;
-        width: 88px;
-        height: 88px;
-        border-radius: 50%;
-        background: rgba(8, 13, 20, 0.7);
-        border: 1px solid rgba(255,255,255,0.16);
-        box-shadow: inset 0 0 0 10px rgba(255,255,255,0.04);
-        touch-action: none;
-        cursor: grab;
-      }
-
-      .joystick-knob {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #f8e7c7, #b88b58);
-        transform: translate(-50%, -50%);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      }
-
-      .jump-button {
-        position: absolute;
-        right: 20px;
-        bottom: 20px;
-        z-index: 10;
-        width: 88px;
-        height: 88px;
-        border: 0;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #7b3dff, #4a24b5);
-        color: #fff;
-        font-size: 18px;
-        font-weight: 700;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
-        cursor: pointer;
-      }
-
-      .jump-button:active {
-        transform: scale(0.96);
-      }
-
-      .stars {
-        position: absolute;
-        inset: 0;
-      }
-
-      .star {
-        position: absolute;
-        background: #fff;
-        border-radius: 50%;
-        opacity: 0.85;
-        animation: twinkle 3s infinite ease-in-out;
-      }
-
-      .star::before {
-        content: "";
-        position: absolute;
-        inset: -2px;
-        background: inherit;
-        border-radius: 50%;
-        filter: blur(2px);
-      }
-
-      .star-1 { width: 3px; height: 3px; left: 12%; top: 18%; }
-      .star-2 { width: 2px; height: 2px; left: 24%; top: 12%; animation-delay: 0.8s; }
-      .star-3 { width: 4px; height: 4px; right: 18%; top: 26%; animation-delay: 1.2s; }
-      .star-4 { width: 2px; height: 2px; right: 34%; top: 16%; animation-delay: 2s; }
-      .star-5 { width: 3px; height: 3px; left: 48%; top: 9%; animation-delay: 1.6s; }
-
-      .fog {
-        position: absolute;
-        inset: auto 0 0;
-        height: 120px;
-        background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.16) 100%);
-        filter: blur(8px);
-        animation: drift 10s linear infinite;
-      }
-
-      .fog-2 {
-        height: 90px;
-        opacity: 0.6;
-        animation-duration: 14s;
-      }
-
-      .hill {
-        position: absolute;
-        bottom: 0;
-        border-radius: 50% 50% 0 0;
-      }
-
-      .objective-mountain {
-        position: absolute;
-        right: 70px;
-        top: 120px;
-        width: 220px;
-        height: 220px;
-        clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-        background: linear-gradient(180deg, #4d473f 0%, #2a241f 100%);
-        box-shadow: inset 0 -20px 0 rgba(0,0,0,0.3);
-      }
-
-      .objective-mountain::before {
-        content: "";
-        position: absolute;
-        left: 50%;
-        top: 24px;
-        transform: translateX(-50%);
-        width: 96px;
-        height: 86px;
-        background: radial-gradient(circle, #6b1a1a 0%, #2a0505 70%, transparent 71%);
-        border-radius: 50%;
-        box-shadow: 0 0 24px rgba(255, 0, 0, 0.18);
-      }
-
-      .objective-mountain::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        top: 54px;
-        transform: translateX(-50%);
-        width: 84px;
-        height: 64px;
-        border: 5px solid rgba(255,255,255,0.14);
-        border-top: 0;
-        border-radius: 0 0 999px 999px;
-      }
-
-      .hill-back {
-        width: 74%;
-        height: 190px;
-        left: -8%;
-        background: #2f4a2f;
-      }
-
-      .hill-mid {
-        width: 64%;
-        height: 230px;
-        right: -8%;
-        background: #304c31;
-      }
-
-      .hill-front {
-        width: 100%;
-        height: 180px;
-        left: 0;
-        background: #243b24;
-        transform: translateY(25px);
-      }
-
-      .tree {
-        position: absolute;
-        bottom: 70px;
-      }
-
-      .tree .trunk {
-        position: absolute;
-        left: 50%;
-        bottom: 0;
-        transform: translateX(-50%);
-        width: 16px;
-        height: 72px;
-        background: linear-gradient(180deg, #503223 0%, #321a10 100%);
-        border-radius: 6px 6px 2px 2px;
-      }
-
-      .tree .canopy {
-        position: absolute;
-        left: 50%;
-        bottom: 55px;
-        transform: translateX(-50%);
-        width: 90px;
-        height: 90px;
-        background: radial-gradient(circle at 30% 30%, #5c964f 0%, #2c612d 70%, #16331b 100%);
-        border-radius: 50%;
-        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.04);
-      }
-
-      .tree-small .canopy {
-        width: 70px;
-        height: 70px;
-        bottom: 45px;
-      }
-
-      .tree-small .trunk {
-        height: 56px;
-      }
-
-      .tree-1 { left: 8%; }
-      .tree-2 { left: 20%; }
-      .tree-3 { left: 34%; }
-      .tree-4 { left: 47%; }
-      .tree-5 { left: 62%; }
-      .tree-6 { right: 8%; }
-      .tree-7 { left: 74%; bottom: 84px; }
-      .tree-8 { left: 15%; bottom: 92px; }
-      .tree-9 { left: 56%; bottom: 90px; }
-      .tree-10 { right: 24%; bottom: 78px; }
-
-      .tree-small {
-        transform: scale(0.8);
-      }
-
-      .grass {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 70px;
-        background: linear-gradient(180deg, #2f5d30 0%, #17361b 100%);
-      }
-
-      .iron {
-        position: absolute;
-        bottom: 70px;
-        width: 32px;
-        height: 22px;
-        background: linear-gradient(135deg, #9ca3ab 0%, #626973 40%, #2e3338 100%);
-        border-radius: 10px 10px 6px 6px;
-        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.16), 0 0 8px rgba(0,0,0,0.22);
-        opacity: 0.9;
-      }
-
-      .iron::before {
-        content: "";
-        position: absolute;
-        inset: 2px 6px auto;
-        height: 8px;
-        border-radius: 999px;
-        background: rgba(255,255,255,0.16);
-      }
-
-      .iron-a { left: 18%; }
-      .iron-b { left: 49%; transform: rotate(10deg) scale(1.1); }
-      .iron-c { right: 17%; transform: rotate(-12deg) scale(0.95); }
-
-      .monster {
-        position: absolute;
-        bottom: 74px;
-        width: 96px;
-        height: 110px;
-        background: linear-gradient(180deg, #0f0f0f 0%, #1b1b1b 100%);
-        border-radius: 46% 54% 48% 52%;
-        box-shadow: inset 0 0 0 4px rgba(255,255,255,0.06), 0 0 22px rgba(0,0,0,0.4);
-        animation: lurch 2.2s ease-in-out infinite;
-      }
-
-      .titan {
-        position: absolute;
-        right: 88px;
-        top: 54px;
-        width: 120px;
-        height: 160px;
-        transform: rotate(8deg);
-      }
-
-      .titan .head {
-        position: absolute;
-        left: 50%;
-        top: 0;
-        transform: translateX(-50%);
-        width: 86px;
-        height: 78px;
-        background: linear-gradient(180deg, #8a7b6d 0%, #4d4036 100%);
-        border-radius: 42% 42% 46% 46%;
-        box-shadow: 0 0 32px rgba(0,0,0,0.3);
-      }
-
-      .titan .head::before {
-        content: "";
-        position: absolute;
-        left: 50%;
-        top: 18px;
-        transform: translateX(-50%);
-        width: 44px;
-        height: 30px;
-        border-radius: 50%;
-        border: 4px solid rgba(255,255,255,0.15);
-        border-top: 0;
-      }
-
-      .titan .body {
-        position: absolute;
-        left: 50%;
-        top: 70px;
-        transform: translateX(-50%);
-        width: 96px;
-        height: 90px;
-        background: linear-gradient(180deg, #3d3127 0%, #18110d 100%);
-        border-radius: 24px 24px 30px 30px;
-      }
-
-      .titan .arm {
-        position: absolute;
-        top: 78px;
-        width: 18px;
-        height: 70px;
-        background: linear-gradient(180deg, #5f4d3f 0%, #2c231d 100%);
-        border-radius: 999px;
-      }
-
-      .titan .arm.left { left: 6px; transform: rotate(18deg); }
-      .titan .arm.right { right: 6px; transform: rotate(-18deg); }
-
-      .objective-label {
-        position: absolute;
-        top: 20px;
-        right: 90px;
-        z-index: 8;
-        padding: 8px 10px;
-        border-radius: 999px;
-        background: rgba(8, 13, 20, 0.78);
-        color: #f3e4b7;
-        font-size: 12px;
-        border: 1px solid rgba(255,255,255,0.16);
-      }
-
-      .monster::before {
-        content: "";
-        position: absolute;
-        left: 50%;
-        top: -12px;
-        transform: translateX(-50%);
-        width: 38px;
-        height: 24px;
-        background: inherit;
-        border-radius: 50%;
-      }
-
-      .monster::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        bottom: -12px;
-        transform: translateX(-50%);
-        width: 72px;
-        height: 20px;
-        background: rgba(0, 0, 0, 0.6);
-        border-radius: 50%;
-        filter: blur(6px);
-      }
-
-      .monster .eye {
-        position: absolute;
-        top: 40px;
-        width: 16px;
-        height: 16px;
-        background: radial-gradient(circle, #ff4d4d 0%, #8c0000 60%, #2d0000 100%);
-        border-radius: 50%;
-        box-shadow: 0 0 14px rgba(255, 77, 77, 0.7);
-        animation: blink 2.8s infinite;
-      }
-
-      .monster .eye.left { left: 24px; }
-      .monster .eye.right { right: 24px; }
-
-      .monster .mouth {
-        position: absolute;
-        left: 50%;
-        top: 70px;
-        transform: translateX(-50%);
-        width: 34px;
-        height: 12px;
-        border-bottom: 4px solid #5d0000;
-        border-radius: 0 0 999px 999px;
-      }
-
-      .monster-left { left: 8%; }
-      .monster-mid { left: 44%; bottom: 88px; transform: scale(0.95); animation-delay: 0.4s; }
-      .monster-right { right: 8%; transform: scale(0.9); animation-delay: 0.8s; }
-
-      .monster-left .eye { top: 38px; }
-      .monster-right .eye { top: 42px; }
-
-      @keyframes twinkle {
-        0%, 100% { opacity: 0.4; transform: scale(0.8); }
-        50% { opacity: 1; transform: scale(1.2); }
-      }
-
-      @keyframes drift {
-        from { transform: translateX(-10%); }
-        to { transform: translateX(10%); }
-      }
-
-      @keyframes blink {
-        0%, 92%, 100% { transform: scale(1); opacity: 1; }
-        95% { transform: scale(0.15); opacity: 0.3; }
-      }
-
-      @keyframes lurch {
-        0%, 100% { transform: translateY(0px) rotate(0deg); }
-        50% { transform: translateY(-8px) rotate(1.5deg); }
-      }
-
-      .forest.jumping {
-        animation: jumpScene 0.32s ease-out;
-      }
-
-      @keyframes jumpScene {
-        0% { transform: translateY(0px); }
-        40% { transform: translateY(-12px); }
-        100% { transform: translateY(0px); }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="forest">
-      <div class="craft-panel">
-        <button id="houseButton" class="craft-button house" disabled>🏠 Build House</button>
-        <button id="craftButton" class="craft-button" disabled>Craft Gun</button>
-        <div id="craftStatus" class="craft-status">Iron: 0 / 5</div>
-      </div>
-      <div class="inventory">
-        <h1>Start Gear</h1>
-        <div class="item"><span class="icon">🪓</span> Axe</div>
-        <div class="item"><span class="icon">⛏️</span> Pickaxe</div>
-        <div class="item"><span class="icon">🪹</span> Shovel</div>
-        <div class="item"><span class="icon">👜</span> Sack (20 slots)</div>
-        <div class="hint">Cut trees, mine iron, dig, and carry your loot.</div>
-      </div>
-      <div class="moon"></div>
-      <div class="stars">
-        <span class="star star-1"></span>
-        <span class="star star-2"></span>
-        <span class="star star-3"></span>
-        <span class="star star-4"></span>
-        <span class="star star-5"></span>
-      </div>
-      <div class="fog"></div>
-      <div class="fog fog-2"></div>
-
-      <div class="objective-label">Objective: kill the Ultimate Titan</div>
-      <div class="objective-mountain"></div>
-      <div class="titan">
-        <div class="head"></div>
-        <div class="body"></div>
-        <div class="arm left"></div>
-        <div class="arm right"></div>
-      </div>
-
-      <div class="hill hill-back"></div>
-      <div class="hill hill-mid"></div>
-      <div class="hill hill-front"></div>
-
-      <div class="iron iron-a"></div>
-      <div class="iron iron-b"></div>
-      <div class="iron iron-c"></div>
-
-      <div class="monster monster-left">
-        <span class="eye left"></span>
-        <span class="eye right"></span>
-        <span class="mouth"></span>
-      </div>
-      <div class="monster monster-mid">
-        <span class="eye left"></span>
-        <span class="eye right"></span>
-        <span class="mouth"></span>
-      </div>
-      <div class="monster monster-right">
-        <span class="eye left"></span>
-        <span class="eye right"></span>
-        <span class="mouth"></span>
-      </div>
-
-      <div class="tree tree-1">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-2">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-3 tree-small">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-4">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-5 tree-small">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-6">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-7 tree-small">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-8">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-9 tree-small">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-      <div class="tree tree-10">
-        <div class="canopy"></div>
-        <div class="trunk"></div>
-      </div>
-
-      <div class="grass"></div>
-      <div class="joystick-wrap">
-        <div id="joystick" class="joystick">
-          <div id="joystickKnob" class="joystick-knob"></div>
-        </div>
-      </div>
-      <button id="jumpButton" class="jump-button">Jump</button>
-      <div id="resourceStatus" class="resource-status">Wood planks: 0</div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stonecraft</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    #wrap {
+      position: relative;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+      border: 4px solid #2f2f2f;
+    }
+
+    canvas {
+      display: block;
+      background: linear-gradient(#7cc7ff, #e8f7ff);
+    }
+
+    #hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.68);
+      border-radius: 8px;
+      line-height: 1.45;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    #hud b {
+      color: #ffd54f;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" width="960" height="540"></canvas>
+    <div id="hud">
+      <div><b>Stonecraft</b></div>
+      <div>Move: A/D or arrows • Jump: W / Space</div>
+      <div>Mine: click nearby blocks</div>
+      <div>Iron: <span id="ironCount">0</span> • Gun: <span id="gunState">not crafted</span></div>
+      <div>Goal: kill the giant on the mountain</div>
     </div>
-    <script>
-      const ironNodes = document.querySelectorAll('.iron');
-      const treeNodes = document.querySelectorAll('.tree');
-      const craftButton = document.getElementById('craftButton');
-      const houseButton = document.getElementById('houseButton');
-      const craftStatus = document.getElementById('craftStatus');
-      const resourceStatus = document.getElementById('resourceStatus');
-      const joystick = document.getElementById('joystick');
-      const joystickKnob = document.getElementById('joystickKnob');
-      const jumpButton = document.getElementById('jumpButton');
-      const forest = document.querySelector('.forest');
-      let ironCount = 0;
-      let woodPlanks = 0;
-      let moveX = 0;
-      let moveY = 0;
+  </div>
 
-      ironNodes.forEach((iron) => {
-        iron.addEventListener('click', () => {
-          ironCount += 1;
-          craftStatus.textContent = `Iron: ${ironCount} / 5`;
-          iron.remove();
-          craftButton.disabled = ironCount < 5;
-        });
-      });
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const hudIron = document.getElementById("ironCount");
+    const hudGun = document.getElementById("gunState");
 
-      treeNodes.forEach((tree) => {
-        tree.addEventListener('click', () => {
-          if (tree.dataset.chopping === 'true') return;
-          tree.dataset.chopping = 'true';
-          tree.style.opacity = '0.7';
-          tree.style.filter = 'saturate(0.7)';
-          resourceStatus.textContent = 'Chopping tree...';
+    const tile = 32;
+    const worldWidth = 1800;
+    const worldCols = Math.floor(worldWidth / tile);
+    const worldRows = 16;
+    const blocks = new Map();
+    const keys = {};
+    const bullets = [];
+    const mouse = { x: 0, y: 0, down: false };
 
-          setTimeout(() => {
-            woodPlanks += 2;
-            resourceStatus.textContent = `Wood planks: ${woodPlanks}`;
-            houseButton.disabled = woodPlanks < 30;
-            tree.style.opacity = '0';
-            tree.style.pointerEvents = 'none';
-            delete tree.dataset.chopping;
-          }, 3000);
-        });
-      });
+    let cameraX = 0;
+    let shootCooldown = 0;
+    let message = "Iron is easy to find. No diamonds, no emeralds, no nether, no end.";
+    let messageTimer = 0;
+    let lastTime = performance.now();
 
-      houseButton.addEventListener('click', () => {
-        if (woodPlanks >= 30) {
-          resourceStatus.textContent = 'House built!';
-          houseButton.textContent = '🏠 House Ready';
-          houseButton.disabled = true;
+    const player = {
+      x: 140,
+      y: 0,
+      w: 28,
+      h: 46,
+      vx: 0,
+      vy: 0,
+      grounded: false,
+      facing: 1,
+      iron: 0,
+      gun: false,
+      hp: 100
+    };
+
+    const giant = {
+      x: 0,
+      y: 0,
+      w: 90,
+      h: 170,
+      hp: 60,
+      alive: true
+    };
+
+    function generateTerrain() {
+      const heights = [];
+      for (let col = 0; col < worldCols; col += 1) {
+        let h = 10 + Math.floor(Math.sin(col / 6) * 2 + Math.cos(col / 8) * 1.6);
+        if (col > 42 && col < 60) {
+          h += 3 + (col - 42) * 0.85;
+        } else if (col >= 60) {
+          h += 2;
         }
+        heights.push(Math.max(8, Math.min(14, h)));
+      }
+
+      blocks.clear();
+      for (let col = 0; col < worldCols; col += 1) {
+        const h = heights[col];
+        for (let row = 0; row < worldRows; row += 1) {
+          const key = `${col},${row}`;
+          if (row < h - 2) {
+            blocks.set(key, { col, row, type: "stone" });
+          } else if (row < h) {
+            blocks.set(key, { col, row, type: "dirt" });
+          } else if (row === h) {
+            blocks.set(key, { col, row, type: "grass" });
+          } else {
+            blocks.set(key, { col, row, type: "air" });
+          }
+        }
+      }
+
+      for (let col = 1; col < worldCols - 1; col += 1) {
+        for (let row = 2; row < heights[col] - 2; row += 1) {
+          const key = `${col},${row}`;
+          const block = blocks.get(key);
+          if (block && block.type === "stone" && Math.random() < 0.3) {
+            blocks.set(key, { col, row, type: "iron" });
+          }
+        }
+      }
+
+      const mountainCol = 54;
+      giant.x = mountainCol * tile + 48;
+      giant.y = heights[mountainCol] * tile - giant.h - 18;
+    }
+
+    function getBlockAtWorld(x, y) {
+      const col = Math.floor(x / tile);
+      const row = Math.floor(y / tile);
+      if (col < 0 || col >= worldCols || row < 0 || row >= worldRows) {
+        return null;
+      }
+      return blocks.get(`${col},${row}`);
+    }
+
+    function intersectsSolid(x, y, w, h) {
+      const points = [
+        [x + 2, y + 2],
+        [x + w - 3, y + 2],
+        [x + 2, y + h - 3],
+        [x + w - 3, y + h - 3],
+        [x + w / 2, y + 2],
+        [x + w / 2, y + h - 3]
+      ];
+      return points.some(([px, py]) => {
+        const block = getBlockAtWorld(px, py);
+        return block && block.type !== "air";
       });
+    }
 
-      const updateJoystick = (clientX, clientY) => {
-        const rect = joystick.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const dx = clientX - centerX;
-        const dy = clientY - centerY;
-        const distance = Math.min(26, Math.hypot(dx, dy));
-        const angle = Math.atan2(dy, dx);
-        moveX = Math.cos(angle) * distance;
-        moveY = Math.sin(angle) * distance;
-        joystickKnob.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
-        forest.style.transform = `translate(${moveX * 2.2}px, ${moveY * 2.2}px)`;
-      };
+    function spawnPlayer() {
+      const spawnCol = 2;
+      player.x = 140;
+      player.y = (Math.max(8, 10) * tile) - player.h - 2;
+      player.vx = 0;
+      player.vy = 0;
+      player.grounded = false;
+      player.iron = 0;
+      player.gun = false;
+      player.hp = 100;
+      giant.hp = 60;
+      giant.alive = true;
+      bullets.length = 0;
+      cameraX = 0;
+      message = "Iron is easy to find. No diamonds, no emeralds, no nether, no end.";
+      messageTimer = 3;
+    }
 
-      const resetJoystick = () => {
-        moveX = 0;
-        moveY = 0;
-        joystickKnob.style.transform = 'translate(-50%, -50%)';
-        forest.style.transform = 'translate(0px, 0px)';
-      };
+    function craftGunIfPossible() {
+      if (player.iron >= 10 && !player.gun) {
+        player.gun = true;
+        message = "Gun crafted! Press space to fire infinite bullets.";
+        messageTimer = 3;
+      }
+    }
 
-      joystick.addEventListener('pointerdown', (event) => {
+    function breakBlockAtScreen(screenX, screenY) {
+      const worldX = screenX + cameraX;
+      const worldY = screenY;
+      const block = getBlockAtWorld(worldX, worldY);
+      if (!block || block.type === "air") return;
+
+      const dx = (block.col * tile + tile / 2) - (player.x + player.w / 2);
+      const dy = (block.row * tile + tile / 2) - (player.y + player.h / 2);
+      if (Math.hypot(dx, dy) > 140) return;
+
+      if (block.type === "iron") {
+        player.iron += 1;
+        craftGunIfPossible();
+      }
+
+      blocks.set(`${block.col},${block.row}`, { col: block.col, row: block.row, type: "air" });
+    }
+
+    function shoot() {
+      if (!player.gun) return;
+      const aimX = mouse.x + cameraX;
+      const aimY = mouse.y;
+      const dirX = aimX - (player.x + player.w / 2);
+      const dirY = aimY - (player.y + player.h / 2);
+      const dist = Math.hypot(dirX, dirY) || 1;
+      bullets.push({
+        x: player.x + player.w / 2,
+        y: player.y + player.h / 2,
+        vx: (dirX / dist) * 760,
+        vy: (dirY / dist) * 760,
+        life: 1.2
+      });
+    }
+
+    function update(dt) {
+      const left = keys["ArrowLeft"] || keys["a"] || keys["A"];
+      const right = keys["ArrowRight"] || keys["d"] || keys["D"];
+      const jump = keys["ArrowUp"] || keys["w"] || keys["W"] || keys[" "];
+
+      let move = 0;
+      if (right) move += 1;
+      if (left) move -= 1;
+      player.vx = move * 240;
+
+      if (jump && player.grounded) {
+        player.vy = -360;
+        player.grounded = false;
+      }
+
+      player.vy += 900 * dt;
+      player.x += player.vx * dt;
+      if (intersectsSolid(player.x, player.y, player.w, player.h)) {
+        player.x -= player.vx * dt;
+        player.vx = 0;
+      }
+
+      player.y += player.vy * dt;
+      if (intersectsSolid(player.x, player.y, player.w, player.h)) {
+        player.y -= player.vy * dt;
+        player.vy = 0;
+        player.grounded = true;
+      } else {
+        player.grounded = false;
+      }
+
+      player.facing = player.vx >= 0 ? 1 : -1;
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.w > worldWidth) player.x = worldWidth - player.w;
+
+      cameraX = player.x + player.w / 2 - canvas.width / 2;
+      cameraX = Math.max(0, Math.min(worldWidth - canvas.width, cameraX));
+
+      if (shootCooldown > 0) shootCooldown -= dt;
+      if (keys[" "] && shootCooldown <= 0 && player.gun) {
+        shoot();
+        shootCooldown = 0.18;
+      }
+
+      for (let i = bullets.length - 1; i >= 0; i -= 1) {
+        const bullet = bullets[i];
+        bullet.x += bullet.vx * dt;
+        bullet.y += bullet.vy * dt;
+        bullet.life -= dt;
+        if (bullet.life <= 0) {
+          bullets.splice(i, 1);
+          continue;
+        }
+        if (giant.alive && bullet.x > giant.x && bullet.x < giant.x + giant.w && bullet.y > giant.y && bullet.y < giant.y + giant.h) {
+          giant.hp -= 1;
+          bullets.splice(i, 1);
+          if (giant.hp <= 0) {
+            giant.alive = false;
+            message = "You killed the giant!";
+            messageTimer = 4;
+          }
+        }
+      }
+
+      hudIron.textContent = player.iron;
+      hudGun.textContent = player.gun ? "crafted" : "not crafted";
+
+      if (messageTimer > 0) {
+        messageTimer -= dt;
+      }
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      sky.addColorStop(0, "#7cc7ff");
+      sky.addColorStop(1, "#edf7ff");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#f7d96c";
+      ctx.beginPath();
+      ctx.arc(780, 90, 60, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawWorld() {
+      ctx.save();
+      ctx.translate(-cameraX, 0);
+      for (const block of blocks.values()) {
+        if (block.type === "air") continue;
+        const x = block.col * tile;
+        const y = block.row * tile;
+        if (block.type === "grass") {
+          ctx.fillStyle = "#5fbe4b";
+        } else if (block.type === "dirt") {
+          ctx.fillStyle = "#8d5d2f";
+        } else if (block.type === "stone") {
+          ctx.fillStyle = "#8f8f8f";
+        } else if (block.type === "iron") {
+          ctx.fillStyle = "#b9734b";
+        }
+        ctx.fillRect(x, y, tile, tile);
+        ctx.strokeStyle = "rgba(0,0,0,0.2)";
+        ctx.strokeRect(x, y, tile, tile);
+      }
+
+      if (giant.alive) {
+        ctx.fillStyle = "#5b4d3a";
+        ctx.fillRect(giant.x, giant.y, giant.w, giant.h);
+        ctx.fillStyle = "#2d241f";
+        ctx.fillRect(giant.x + 16, giant.y + 25, giant.w - 32, giant.h - 60);
+        ctx.fillStyle = "#f4e9d4";
+        ctx.fillRect(giant.x + 24, giant.y + 42, 16, 16);
+        ctx.fillRect(giant.x + 50, giant.y + 42, 16, 16);
+        ctx.fillRect(giant.x + 35, giant.y + 72, 20, 12);
+      }
+
+      ctx.fillStyle = "#2f6f8c";
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillStyle = "#e7c08c";
+      ctx.fillRect(player.x + 4, player.y + 6, player.w - 8, 10);
+      ctx.fillStyle = "#1a1a1a";
+      ctx.fillRect(player.x + 8, player.y + 20, 6, 10);
+      ctx.fillRect(player.x + 14, player.y + 20, 6, 10);
+      ctx.fillRect(player.x + 9, player.y + 36, 10, 10);
+      if (player.gun) {
+        ctx.fillStyle = "#444";
+        ctx.fillRect(player.x + player.w - 8, player.y + 16, 8, 10);
+      }
+
+      ctx.fillStyle = "#ff6b6b";
+      bullets.forEach((bullet) => {
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function drawUI() {
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(18, 18, 300, 80);
+      ctx.fillStyle = "white";
+      ctx.font = "16px Arial";
+      ctx.fillText(message, 30, 44);
+      if (player.gun) {
+        ctx.fillText("Infinite bullets ready.", 30, 68);
+      }
+    }
+
+    function loop(now) {
+      const dt = Math.min(0.033, (now - lastTime) / 1000);
+      lastTime = now;
+      update(dt);
+      drawBackground();
+      drawWorld();
+      drawUI();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("keydown", (event) => {
+      keys[event.key] = true;
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "w", "a", "d"].includes(event.key)) {
         event.preventDefault();
-        joystick.setPointerCapture(event.pointerId);
-        updateJoystick(event.clientX, event.clientY);
-      });
+      }
+    });
 
-      joystick.addEventListener('pointermove', (event) => {
-        if (event.buttons === 0) return;
-        updateJoystick(event.clientX, event.clientY);
-      });
+    window.addEventListener("keyup", (event) => {
+      keys[event.key] = false;
+    });
 
-      joystick.addEventListener('pointerup', resetJoystick);
-      joystick.addEventListener('pointerleave', resetJoystick);
-      joystick.addEventListener('pointercancel', resetJoystick);
+    canvas.addEventListener("mousedown", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      mouse.x = (event.clientX - rect.left) * scaleX;
+      mouse.y = (event.clientY - rect.top) * scaleY;
+      mouse.down = true;
+      breakBlockAtScreen(mouse.x, mouse.y);
+    });
 
-      jumpButton.addEventListener('click', () => {
-        forest.classList.remove('jumping');
-        void forest.offsetWidth;
-        forest.classList.add('jumping');
-        setTimeout(() => forest.classList.remove('jumping'), 320);
-      });
+    canvas.addEventListener("mousemove", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      mouse.x = (event.clientX - rect.left) * scaleX;
+      mouse.y = (event.clientY - rect.top) * scaleY;
+    });
 
-      craftButton.addEventListener('click', () => {
-        if (ironCount >= 5) {
-          craftStatus.textContent = 'Gun crafted!';
-          craftButton.textContent = 'Gun Ready';
-          craftButton.disabled = true;
-        }
-      });
-    </script>
-  </body>
+    window.addEventListener("mouseup", () => {
+      mouse.down = false;
+    });
+
+    generateTerrain();
+    spawnPlayer();
+    requestAnimationFrame(loop);
+  </script>
+</body>
 </html>
